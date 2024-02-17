@@ -1,0 +1,66 @@
+title: Fast Bulky Vendor
+originalAuthor: Shananas
+game: kh2
+assets:
+#Lua Script
+- name: scripts/F266B00B GoA ROM.lua
+  method: copy
+  source:
+  - name: F266B00B GoA ROM.lua
+#Fast Bulky Vendor
+- method: copy
+  name: obj/M_EX590.mset
+  multi:
+  - name: obj/M_EX590_NM.mset
+  source:
+  - name: obj/M_EX590.mset
+#Quick Chests
+- name: obj/F_EX030.mset
+  method: copy
+  source:
+  - name: obj/F_EX030.mset
+- name: obj/F_EX030_TT.mset
+  method: copy
+  source:
+  - name: obj/F_EX030_TT.mset
+- name: obj/F_EX050.mset
+  method: copy
+  source:
+  - name: obj/F_EX050.mset
+#Chest Visual option setting changes
+- method: copy
+  name: obj/F_EX040.mset
+  source:
+  - name: obj/F_EX030.mset
+- method: copy
+  name: obj/F_EX040_TT.mset
+  source:
+  - name: obj/F_EX030_TT.mset
+- method: copy
+  name: obj/F_EX040_RX.mset
+  source:
+  - name: obj/F_EX030_TT.mset
+- method: copy
+  name: obj/F_EX030_LK.mset
+  source:
+  - name: obj/F_EX030_LK.mset
+- method: copy
+  name: obj/F_EX040_LK.mset
+  source:
+  - name: obj/F_EX030_LK.mset
+- method: copy
+  multi:
+  - name: obj/F_EX060_PRF.a.us
+  name: obj/F_EX040_PRF.a.us
+  platform: pc
+  source:
+  - name: obj/F_EX030_EH.a.us
+    type: internal
+- method: copy
+  multi:
+  - name: obj/F_EX060_PRF.a.fm
+  name: obj/F_EX040_PRF.a.fm
+  platform: ps2
+  source:
+  - name: obj/F_EX030_EH.a.fm
+    type: internal
