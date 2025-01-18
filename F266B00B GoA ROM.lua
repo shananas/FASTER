@@ -1,19 +1,22 @@
 --ROM Version
---Last Update: BAR() function implementation
---Todo: Maybe item-based progress flags
+--Last Update: v1.0.0.9 Epic & Steam addresses
 
 LUAGUI_NAME = 'GoA ROM Randomizer Build'
 LUAGUI_AUTH = 'SonicShadowSilver2 (Ported by Num)'
 LUAGUI_DESC = 'A GoA build for use with the Randomizer. Requires ROM patching.'
 
 function _OnInit()
-print('GoA v1.53.5')
+GameVersion = 0
+print('GoA v1.54.2')
 GoAOffset = 0x7C
+SeedCleared = false
+end
+
+function GetVersion() --Define anchor addresses
 if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" then --PCSX2
-	if ENGINE_VERSION < 3.0 then
-		print('LuaEngine is Outdated. Things might not work properly.')
-	end
 	OnPC = false
+	GameVersion = 1
+	print('GoA PS2 Version')
 	Now = 0x032BAE0 --Current Location
 	Sve = 0x1D5A970 --Saved Location
 	Save = 0x032BB30 --Save File
@@ -36,9 +39,9 @@ if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" 
 	CutLen = 0x035DE28 --Cutscene Length
 	CutSkp = 0x035DE08 --Cutscene Skip
 	BtlTyp = 0x1C61958 --Battle Status (Out-of-Battle, Regular, Forced)
-	BtlEnd = 0x1D490C0 --Something about end-of-battle camera
+	BtlEnd = 0x1D490C0 --End-of-Battle camera & signal
 	TxtBox = 0x1D48D54 --Last Displayed Textbox
-	DemCln = 0x1D48DEC --Demyx Clone Status
+	DemCln = 0x1D48DEC --Demyx Clone Status (might have to do with other mission status/signal?)
 	Slot1    = 0x1C6C750 --Unit Slot 1
 	NextSlot = 0x268
 	Point1   = 0x1D48EFC
@@ -47,62 +50,162 @@ if (GAME_ID == 0xF266B00B or GAME_ID == 0xFAF99301) and ENGINE_TYPE == "ENGINE" 
 	NxtGauge = 0x34
 	Menu1    = 0x1C5FF18 --Menu 1 (main command menu)
 	NextMenu = 0x4
+	Obj0 = ReadInt(Obj0Pointer)
+	Sys3 = ReadInt(Sys3Pointer)
+	Btl0 = ReadInt(Btl0Pointer)
+	MSN = 0x04FA440
 elseif GAME_ID == 0x431219CC and ENGINE_TYPE == 'BACKEND' then --PC
-	if ENGINE_VERSION < 5.0 then
-		ConsolePrint('LuaBackend is Outdated. Things might not work properly.',2)
-	end
 	OnPC = true
-	Now = 0x0714DB8 - 0x56454E
-	Sve = 0x2A09C00 - 0x56450E
-	Save = 0x09A7070 - 0x56450E
-	Obj0Pointer = 0x2A22730 - 0x56454E
-	Sys3Pointer = 0x2AE3550 - 0x56454E
-	Btl0Pointer = 0x2AE3558 - 0x56454E
-	ARDPointer = 0x2A0CF28 - 0x56454E
-	Music = 0x0AB8504 - 0x56450E
-	Pause = 0x0AB9038 - 0x56450E
-	React = 0x2A0E822 - 0x56450E
-	Cntrl = 0x2A148A8 - 0x56450E
-	Timer = 0x0AB9010 - 0x56450E
-	Songs = 0x0B63534 - 0x56450E
-	GScre = 0x0728E90 - 0x56454E
-	GMdal = 0x0729024 - 0x56454E
-	GKill = 0x0AF4906 - 0x56450E
-	CamTyp = 0x0716A58 - 0x56454E
-	GamSpd = 0x07151D4 - 0x56454E
-	CutNow = 0x0B62758 - 0x56450E
-	CutLen = 0x0B62774 - 0x56450E
-	CutSkp = 0x0B6275C - 0x56450E
-	BtlTyp = 0x2A0EAC4 - 0x56450E
-	BtlEnd = 0x2A0D3A0 - 0x56450E
-	TxtBox = 0x074BC70 - 0x56454E
-	DemCln = 0x2A0CF74 - 0x56450E
-	Slot1    = 0x2A20C58 - 0x56450E
-	NextSlot = 0x278
-	Point1   = 0x2A0D108 - 0x56450E
-	NxtPoint = 0x50
-	Gauge1   = 0x2A0D1F8 - 0x56450E
-	NxtGauge = 0x48
-	Menu1    = 0x2A0E7D0 - 0x56450E
-	NextMenu = 0x8
+	if ReadString(0x9A9330,4) == 'KH2J' then --EGS
+		GameVersion = 2
+		print('GoA Epic Version')
+		Now = 0x0716DF8
+		Sve = 0x2A0BFC0
+		Save = 0x09A9330
+		Obj0Pointer = 0x2A24AB0
+		Sys3Pointer = 0x2AE58D0
+		Btl0Pointer = 0x2AE58D8
+		ARDPointer = 0x2A0F2A8
+		Music = 0x0ABA7C4
+		Pause = 0x0ABB2F8
+		React = 0x2A10BE2
+		Cntrl = 0x2A16C68
+		Timer = 0x0ABB2D0
+		Songs = 0x0B657F4
+		GScre = 0x072AEB0
+		GMdal = 0x072B044
+		GKill = 0x0AF6BC6
+		CamTyp = 0x0718A98
+		GamSpd = 0x0717214
+		CutNow = 0x0B64A18
+		CutLen = 0x0B64A34
+		CutSkp = 0x0B64A1C
+		BtlTyp = 0x2A10E84
+		BtlEnd = 0x2A0F760
+		TxtBox = 0x074DCB0
+		DemCln = 0x2A0F334
+		Slot1    = 0x2A23018
+		NextSlot = 0x278
+		Point1   = 0x2A0F4C8
+		NxtPoint = 0x50
+		Gauge1   = 0x2A0F5B8
+		NxtGauge = 0x48
+		Menu1    = 0x2A10B90
+		NextMenu = 0x8
+		Obj0 = ReadLong(Obj0Pointer)
+		Sys3 = ReadLong(Sys3Pointer)
+		Btl0 = ReadLong(Btl0Pointer)
+		MSN = 0x0BF2C80
+	elseif ReadString(0x9A98B0,4) == 'KH2J' then --Steam Global
+		GameVersion = 3
+		print('GoA Steam Global Version')
+		Now = 0x0717008
+		Sve = 0x2A0C540
+		Save = 0x09A98B0
+		Obj0Pointer = 0x2A25030
+		Sys3Pointer = 0x2AE5E50
+		Btl0Pointer = 0x2AE5E58
+		ARDPointer = 0x2A0F828
+		Music = 0x0ABAD44
+		Pause = 0x0ABB878
+		React = 0x2A11162
+		Cntrl = 0x2A171E8
+		Timer = 0x0ABB850
+		Songs = 0x0B65D44
+		GScre = 0x072B130
+		GMdal = 0x072B2C4
+		GKill = 0x0AF7146
+		CamTyp = 0x0718CA8
+		GamSpd = 0x0717424
+		CutNow = 0x0B64F98
+		CutLen = 0x0B64FB4
+		CutSkp = 0x0B64F9C
+		BtlTyp = 0x2A11404
+		BtlEnd = 0x2A0FCE0
+		TxtBox = 0x074DF20
+		DemCln = 0x2A0F8B4
+		Slot1    = 0x2A23598
+		NextSlot = 0x278
+		Point1   = 0x2A0FA48
+		NxtPoint = 0x50
+		Gauge1   = 0x2A0FB38
+		NxtGauge = 0x48
+		Menu1    = 0x2A11110
+		NextMenu = 0x8
+		Obj0 = ReadLong(Obj0Pointer)
+		Sys3 = ReadLong(Sys3Pointer)
+		Btl0 = ReadLong(Btl0Pointer)
+		MSN = 0x0BF33C0
+	elseif ReadString(0x9A98B0,4) == 'KH2J' then --Steam JP (same as Global for now)
+		GameVersion = 4
+		print('GoA Steam JP Version')
+		Now = 0x0717008
+		Sve = 0x2A0C540
+		Save = 0x09A98B0
+		Obj0Pointer = 0x2A25030
+		Sys3Pointer = 0x2AE5E50
+		Btl0Pointer = 0x2AE5E58
+		ARDPointer = 0x2A0F828
+		Music = 0x0ABAD44
+		Pause = 0x0ABB878
+		React = 0x2A11162
+		Cntrl = 0x2A171E8
+		Timer = 0x0ABB850
+		Songs = 0x0B65D74
+		GScre = 0x072B130
+		GMdal = 0x072B2C4
+		GKill = 0x0AF7146
+		CamTyp = 0x0718CA8
+		GamSpd = 0x0717424
+		CutNow = 0x0B64F98
+		CutLen = 0x0B64FB4
+		CutSkp = 0x0B64F9C
+		BtlTyp = 0x2A11404
+		BtlEnd = 0x2A0FCE0
+		TxtBox = 0x074DF20
+		DemCln = 0x2A0F8B4
+		Slot1    = 0x2A23598
+		NextSlot = 0x278
+		Point1   = 0x2A0FA48
+		NxtPoint = 0x50
+		Gauge1   = 0x2A0FB38
+		NxtGauge = 0x48
+		Menu1    = 0x2A11110
+		NextMenu = 0x8
+		Obj0 = ReadLong(Obj0Pointer)
+		Sys3 = ReadLong(Sys3Pointer)
+		Btl0 = ReadLong(Btl0Pointer)
+		MSN = 0x0BF33C0
+	elseif ReadString(0x9A7070,4) == "KH2J" or ReadString(0x9A70B0,4) == "KH2J" or ReadString(0x9A92F0,4) == "KH2J" then
+		GameVersion = -1
+		print("Epic Version is outdated. Please update the game.")
+	elseif ReadString(0x9A9830,4) == "KH2J" then
+		GameVersion = -1
+		print("Steam Global Version is outdated. Please update the game.")
+	elseif ReadString(0x9A8830,4) == "KH2J" then
+		GameVersion = -1
+		print("Steam JP Version is outdated. Please update the game.")
+	end
 end
---[[Slot2  = Slot1 - NextSlot
-Slot3  = Slot2 - NextSlot
-Slot4  = Slot3 - NextSlot
-Slot5  = Slot4 - NextSlot
-Slot6  = Slot5 - NextSlot
-Slot7  = Slot6 - NextSlot
-Slot8  = Slot7 - NextSlot
-Slot9  = Slot8 - NextSlot
-Slot10 = Slot9 - NextSlot
-Slot11 = Slot10 - NextSlot
-Slot12 = Slot11 - NextSlot
-Point2 = Point1 + NxtPoint
-Point3 = Point2 + NxtPoint
-Gauge2 = Gauge1 + NxtGauge
-Gauge3 = Gauge2 + NxtGauge--]]
-Menu2  = Menu1 + NextMenu
---Menu3  = Menu2 + NextMenu
+if GameVersion ~= 0 then
+	--[[Slot2  = Slot1 - NextSlot
+	Slot3  = Slot2 - NextSlot
+	Slot4  = Slot3 - NextSlot
+	Slot5  = Slot4 - NextSlot
+	Slot6  = Slot5 - NextSlot
+	Slot7  = Slot6 - NextSlot
+	Slot8  = Slot7 - NextSlot
+	Slot9  = Slot8 - NextSlot
+	Slot10 = Slot9 - NextSlot
+	Slot11 = Slot10 - NextSlot
+	Slot12 = Slot11 - NextSlot
+	Point2 = Point1 + NxtPoint
+	Point3 = Point2 + NxtPoint
+	Gauge2 = Gauge1 + NxtGauge
+	Gauge3 = Gauge2 + NxtGauge--]]
+	Menu2  = Menu1 + NextMenu
+	--Menu3  = Menu2 + NextMenu
+end
 end
 
 function Warp(W,R,D,M,B,E) --Warp into the appropriate World, Room, Door, Map, Btl, Evt
@@ -142,11 +245,12 @@ return Address
 end
 
 function BitOr(Address,Bit,Abs)
-WriteByte(Address,ReadByte(Address)|Bit,Abs and OnPC)
+WriteByte(Address, ReadByte(Address, Abs and OnPC)|Bit, Abs and OnPC)
 end
 
 function BitNot(Address,Bit,Abs)
-WriteByte(Address,ReadByte(Address)&~Bit,Abs and OnPC)
+WriteByte(Address, ReadByte(Address, Abs and OnPC)&~Bit, Abs and OnPC)
+end
 end
 
 function RemoveTTBlocks() --Remove All TT & STT Blocks
@@ -166,7 +270,22 @@ WriteShort(Save+0x211C,0) --The Old Mansion
 WriteShort(Save+0x2120,0) --Mansion Foyer
 end
 
+function VisitLock(ItemAddress, RequiredCount, Address, Bit)
+	local ItemCount = ReadByte(ItemAddress)
+	if ItemCount < RequiredCount then
+		BitNot(Address, Bit)
+	elseif ReadByte(Address) & Bit == 0 then
+		BitOr(Address, Bit)
+	end
+end
+
 function _OnFrame()
+if GameVersion == 0 then --Get anchor addresses
+	GetVersion()
+	return
+elseif GameVersion < 0 then --Incompatible version
+	return
+end
 if true then --Define current values for common addresses
 	World  = ReadByte(Now+0x00)
 	Room   = ReadByte(Now+0x01)
@@ -176,19 +295,6 @@ if true then --Define current values for common addresses
 	Btl    = ReadShort(Now+0x06)
 	Evt    = ReadShort(Now+0x08)
 	PrevPlace = ReadShort(Now+0x30)
-	if Place == 0xFFFF or not MSN then
-		if not OnPC then
-			Obj0 = ReadInt(Obj0Pointer)
-			Sys3 = ReadInt(Sys3Pointer)
-			Btl0 = ReadInt(Btl0Pointer)
-			MSN = 0x04FA440
-		else
-			Obj0 = ReadLong(Obj0Pointer)
-			Sys3 = ReadLong(Sys3Pointer)
-			Btl0 = ReadLong(Btl0Pointer)
-			MSN = 0x0BF08C0 - 0x56450E
-		end
-	end
 	if not OnPC then
 		ARD = ReadInt(ARDPointer)
 	else
@@ -244,10 +350,23 @@ end
 end
 
 function GoA()
+--Clear Conditions
+if not SeedCleared then
+	local ObjectiveCount = ReadShort(BAR(Sys3,0x6,0x4F4),OnPC)
+	if ObjectiveCount == 0 then
+		if ReadByte(Save+0x36B2) > 0 and ReadByte(Save+0x36B3) > 0 and ReadByte(Save+0x36B4) > 0 then --All Proofs Obtained
+			SeedCleared = true
+		end
+	else
+		if ReadByte(Save+0x363D) >= ObjectiveCount then --Requisite Objective Count Achieved
+			SeedCleared = true
+		end
+	end
+end
 --Garden of Assemblage Rearrangement
 if Place == 0x1A04 then
 	--Open Promise Charm Path
-	if ReadByte(Save+0x36B2) > 0 and ReadByte(Save+0x36B3) > 0 and ReadByte(Save+0x36B4) > 0 and ReadByte(Save+0x3694) > 0 then --All Proofs & Promise Charm
+	if SeedCleared and ReadByte(Save+0x3694) > 0 then --Seed Cleared & Promise Charm
 		WriteShort(BAR(ARD,0x06,0x05C),0x77A,OnPC) --Text
 	end
 	--Demyx's Portal Text
@@ -264,7 +383,7 @@ if Place == 0x000F then
 		WarpDoor = 0x16
 	elseif Door == 0x04 then --Beast's Castle
 		WarpDoor = 0x17
-	elseif Door == 0x09 then --Halloween Town	
+	elseif Door == 0x09 then --Halloween Town
 		WarpDoor = 0x18
 	elseif Door == 0x0A then --Agrabah
 		WarpDoor = 0x19
@@ -291,57 +410,90 @@ if Place == 0x000F then
 		Warp(0x04,0x1A,WarpDoor)
 	end
 end
---Visits Unlock
+--Visit Locks
 if true then
-	if ReadByte(Save+0x364A) > 0 then --Picture
-		BitOr(Save+0x1C92,0x08) --ZZ_TT_CHECK_1_GOA
-	end
-	if ReadByte(Save+0x3649) > 0 then --Ice Cream
-		BitOr(Save+0x1C92,0x10) --ZZ_TT_CHECK_2_GOA
-	end
-	if ReadByte(Save+0x3643) > 0 then --Membership Card
-		BitOr(Save+0x1C92,0x20) --ZZ_HB_CHECK_1_GOA
-	end
-	if ReadByte(Save+0x35C1) > 0 or true then --Way to the Dawn (Currently unused)
-		BitOr(Save+0x1C92,0x40) --ZZ_HB_CHECK_2_GOA
-	end
-	if ReadByte(Save+0x35B3) > 0 then --Beast's Claw
-		BitOr(Save+0x1C92,0x80) --ZZ_BB_CHECK_GOA
-	end
-	if ReadByte(Save+0x35AE) > 0 then --Battlefields of War
-		BitOr(Save+0x1C93,0x01) --ZZ_HE_CHECK_GOA
-	end
-	if ReadByte(Save+0x35C0) > 0 then --Scimitar
-		BitOr(Save+0x1C93,0x02) --ZZ_AL_CHECK_GOA
-	end
-	if ReadByte(Save+0x35AF) > 0 then --Sword of the Ancestors
-		BitOr(Save+0x1C93,0x04) --ZZ_MU_CHECK_GOA
-	end
-	if ReadByte(Save+0x35B5) > 0 then --Proud Fang
-		BitOr(Save+0x1C94,0x01) --ZZ_LK_CHECK_GOA
-	end
-	if ReadByte(Save+0x35B4) > 0 then --Bone Fist
-		BitOr(Save+0x1C94,0x40) --ZZ_NM_CHECK_GOA
-	end
-	if ReadByte(Save+0x35B6) > 0 then --Skill and Crossbones
-		BitOr(Save+0x1C94,0x80) --ZZ_CA_CHECK_GOA
-	end
-	if ReadByte(Save+0x35C2) > 0 then --Identity Disk
-		BitOr(Save+0x1C95,0x01) --ZZ_TR_CHECK_GOA
-	end
+	--Namine's Sketches
+	VisitLock(Save+0x3642, 1, Save+0x1CD0, 0x01) --TT_START_1
+	--Ice Cream
+	VisitLock(Save+0x3649, 1, Save+0x1CD2, 0x10) --TT_INIT
+	VisitLock(Save+0x3649, 2, Save+0x1C92, 0x08) --ZZ_TT_CHECK_1_GOA
+	VisitLock(Save+0x3649, 3, Save+0x1C92, 0x10) --ZZ_TT_CHECK_2_GOA
+	--Membership Card
+	VisitLock(Save+0x3643, 1, Save+0x1D1B, 0x08) --HB_INIT
+	VisitLock(Save+0x3643, 2, Save+0x1C92, 0x20) --ZZ_HB_CHECK_1_GOA
+	VisitLock(Save+0x3643, 0, Save+0x1C92, 0x40) --ZZ_HB_CHECK_2_GOA
+	--Beast's Claw
+	VisitLock(Save+0x35B3, 1, Save+0x1D31, 0x08) --BB_INIT
+	VisitLock(Save+0x35B3, 2, Save+0x1C92, 0x80) --ZZ_BB_CHECK_GOA
+	--Battlefields of War
+	VisitLock(Save+0x35AE, 1, Save+0x1D53, 0x20) --HE_INIT
+	VisitLock(Save+0x35AE, 2, Save+0x1C93, 0x01) --ZZ_HE_CHECK_GOA
+	--Scimitar
+	VisitLock(Save+0x35C0, 1, Save+0x1D73, 0x02) --AL_INIT
+	VisitLock(Save+0x35C0, 2, Save+0x1C93, 0x02) --ZZ_AL_CHECK_GOA
+	--Sword of the Ancestors
+	VisitLock(Save+0x35AF, 1, Save+0x1D91, 0x01) --MU_INIT
+	VisitLock(Save+0x35AF, 2, Save+0x1C93, 0x04) --ZZ_MU_CHECK_GOA
+	--Proud Fang
+	VisitLock(Save+0x35B5, 1, Save+0x1DD5, 0x04) --LK_INIT
+	VisitLock(Save+0x35B5, 2, Save+0x1C94, 0x01) --ZZ_LK_CHECK_GOA
+	--Royal Summons (DUMMY 13)
+	VisitLock(Save+0x365D, 1, Save+0x1E12, 0x08) --DC_INIT
+	VisitLock(Save+0x365D, 2, Save+0x1C94, 0x20) --ZZ_DC_CHECK_GOA
+	--Bone Fist
+	VisitLock(Save+0x35B4, 1, Save+0x1E56, 0x08) --NM_INIT
+	VisitLock(Save+0x35B4, 2, Save+0x1C94, 0x40) --ZZ_NM_CHECK_GOA
+	--Skill and Crossbones
+	VisitLock(Save+0x35B6, 1, Save+0x1E99, 0x04) --CA_INIT
+	VisitLock(Save+0x35B6, 2, Save+0x1C94, 0x80) --ZZ_CA_CHECK_GOA
+	--Identity Disk
+	VisitLock(Save+0x35C2, 1, Save+0x1EB5, 0x20) --TR_INIT
+	VisitLock(Save+0x35C2, 2, Save+0x1C95, 0x01) --ZZ_TR_CHECK_GOA
+	--Way to the Dawn
+	VisitLock(Save+0x35C1, 1, Save+0x1C95, 0x02) --ZZ_EH_CHECK_1_GOA
+	VisitLock(Save+0x35C1, 2, Save+0x1C95, 0x04) --ZZ_EH_CHECK_2_GOA
 else --Remove the item requirements
-	BitOr(Save+0x1C92,0x08) --ZZ_TT_CHECK_1_GOA
-	BitOr(Save+0x1C92,0x10) --ZZ_TT_CHECK_2_GOA
-	BitOr(Save+0x1C92,0x20) --ZZ_HB_CHECK_1_GOA
-	BitOr(Save+0x1C92,0x40) --ZZ_HB_CHECK_2_GOA
-	BitOr(Save+0x1C92,0x80) --ZZ_BB_CHECK_GOA
-	BitOr(Save+0x1C93,0x01) --ZZ_HE_CHECK_GOA
-	BitOr(Save+0x1C93,0x02) --ZZ_AL_CHECK_GOA
-	BitOr(Save+0x1C93,0x04) --ZZ_MU_CHECK_GOA
-	BitOr(Save+0x1C94,0x01) --ZZ_LK_CHECK_GOA
-	BitOr(Save+0x1C94,0x40) --ZZ_NM_CHECK_GOA
-	BitOr(Save+0x1C94,0x80) --ZZ_CA_CHECK_GOA
-	BitOr(Save+0x1C95,0x01) --ZZ_TR_CHECK_GOA
+	--Namine's Sketches
+	VisitLock(Save+0x3642, 0, Save+0x1CD0, 0x01) --TT_START_1
+	--Ice Cream
+	VisitLock(Save+0x3649, 0, Save+0x1CD2, 0x10) --TT_INIT
+	VisitLock(Save+0x3649, 0, Save+0x1C92, 0x08) --ZZ_TT_CHECK_1_GOA
+	VisitLock(Save+0x3649, 0, Save+0x1C92, 0x10) --ZZ_TT_CHECK_2_GOA
+	--Membership Card
+	VisitLock(Save+0x3643, 0, Save+0x1D1B, 0x08) --HB_INIT
+	VisitLock(Save+0x3643, 0, Save+0x1C92, 0x20) --ZZ_HB_CHECK_1_GOA
+	VisitLock(Save+0x3643, 0, Save+0x1C92, 0x40) --ZZ_HB_CHECK_2_GOA
+	--Beast's Claw
+	VisitLock(Save+0x35B3, 0, Save+0x1D31, 0x08) --BB_INIT
+	VisitLock(Save+0x35B3, 0, Save+0x1C92, 0x80) --ZZ_BB_CHECK_GOA
+	--Battlefields of War
+	VisitLock(Save+0x35AE, 0, Save+0x1D53, 0x20) --HE_INIT
+	VisitLock(Save+0x35AE, 0, Save+0x1C93, 0x01) --ZZ_HE_CHECK_GOA
+	--Scimitar
+	VisitLock(Save+0x35C0, 0, Save+0x1D73, 0x02) --AL_INIT
+	VisitLock(Save+0x35C0, 0, Save+0x1C93, 0x02) --ZZ_AL_CHECK_GOA
+	--Sword of the Ancestors
+	VisitLock(Save+0x35AF, 0, Save+0x1D91, 0x01) --MU_INIT
+	VisitLock(Save+0x35AF, 0, Save+0x1C93, 0x04) --ZZ_MU_CHECK_GOA
+	--Proud Fang
+	VisitLock(Save+0x35B5, 0, Save+0x1DD5, 0x04) --LK_INIT
+	VisitLock(Save+0x35B5, 0, Save+0x1C94, 0x01) --ZZ_LK_CHECK_GOA
+	--Royal Summons (DUMMY 13)
+	VisitLock(Save+0x365D, 0, Save+0x1E12, 0x08) --DC_INIT
+	VisitLock(Save+0x365D, 0, Save+0x1C94, 0x20) --ZZ_DC_CHECK_GOA
+	--Bone Fist
+	VisitLock(Save+0x35B4, 0, Save+0x1E56, 0x08) --NM_INIT
+	VisitLock(Save+0x35B4, 0, Save+0x1C94, 0x40) --ZZ_NM_CHECK_GOA
+	--Skill and Crossbones
+	VisitLock(Save+0x35B6, 0, Save+0x1E99, 0x04) --CA_INIT
+	VisitLock(Save+0x35B6, 0, Save+0x1C94, 0x80) --ZZ_CA_CHECK_GOA
+	--Identity Disk
+	VisitLock(Save+0x35C2, 0, Save+0x1EB5, 0x20) --TR_INIT
+	VisitLock(Save+0x35C2, 0, Save+0x1C95, 0x01) --ZZ_TR_CHECK_GOA
+	--Way to the Dawn
+	VisitLock(Save+0x35C1, 0, Save+0x1C95, 0x02) --ZZ_EH_CHECK_1_GOA
+	VisitLock(Save+0x35C1, 0, Save+0x1C95, 0x04) --ZZ_EH_CHECK_2_GOA
+
 	--Disable GoA Visit Skip
 	--BitOr(Save+0x1CED,0x01) --TT_MISTERY_SKIP_GOA
 	--BitOr(Save+0x1D20,0x20) --HB_SCENARIO_5_SKIP_GOA
@@ -632,29 +784,30 @@ end
 if true then
 	local Staff   = ReadShort(Save+0x2604)
 	local Ability = {} --Offset for staff's ability within 03system.bar's item
-	Ability[0x04B] = 0x36BA --Mage's Staff
-	Ability[0x094] = 0x36CA --Hammer Staff
-	Ability[0x095] = 0x36DA --Victory Bell
-	Ability[0x097] = 0x36FA --Comet Staff
-	Ability[0x098] = 0x370A --Lord's Broom
-	Ability[0x099] = 0x371A --Wisdom Wand
-	Ability[0x096] = 0x36EA --Meteor Staff
-	Ability[0x09A] = 0x372A --Rising Dragon
-	Ability[0x09C] = 0x374A --Shaman's Relic
-	Ability[0x258] = 0x3B8A --Shaman's Relic+
-	Ability[0x09B] = 0x373A --Nobody Lance
-	Ability[0x221] = 0x3A9A --Centurion
-	Ability[0x222] = 0x3AAA --Centurion+
-	Ability[0x1E2] = 0x390A --Save the Queen
-	Ability[0x1F7] = 0x3A5A --Save the Queen+
-	Ability[0x223] = 0x3ABA --Plain Mushroom
-	Ability[0x224] = 0x3ACA --Plain Mushroom+
-	Ability[0x225] = 0x3ADA --Precious Mushroom
-	Ability[0x226] = 0x3AEA --Precious Mushroom+
-	Ability[0x227] = 0x3AFA --Premium Mushroom
-	Ability[0x0A1] = 0x375A --Detection Staff
+	Ability[0x04B] = 0x48A --Mage's Staff
+	Ability[0x094] = 0x49A --Hammer Staff
+	Ability[0x095] = 0x4AA --Victory Bell
+	Ability[0x097] = 0x4CA --Comet Staff
+	Ability[0x098] = 0x4DA --Lord's Broom
+	Ability[0x099] = 0x4EA --Wisdom Wand
+	Ability[0x096] = 0x4BA --Meteor Staff
+	Ability[0x09A] = 0x4FA --Rising Dragon
+	Ability[0x09C] = 0x51A --Shaman's Relic
+	Ability[0x258] = 0x95A --Shaman's Relic+
+	Ability[0x09B] = 0x50A --Nobody Lance
+	Ability[0x221] = 0x86A --Centurion
+	Ability[0x222] = 0x87A --Centurion+
+	Ability[0x1E2] = 0x6DA --Save the Queen
+	Ability[0x1F7] = 0x82A --Save the Queen+
+	Ability[0x223] = 0x88A --Plain Mushroom
+	Ability[0x224] = 0x89A --Plain Mushroom+
+	Ability[0x225] = 0x8AA --Precious Mushroom
+	Ability[0x226] = 0x8BA --Precious Mushroom+
+	Ability[0x227] = 0x8CA --Premium Mushroom
+	Ability[0x0A1] = 0x52A --Detection Staff
 	if Ability[Staff] ~= nil then
-		Ability = ReadShort(BAR(Sys3,0x6,Ability[Staff]),OnPC) --Currently-equipped staff's ability
+		local StatOffset = 0x8 + ReadInt(BAR(Sys3,0x6,4),OnPC) * 0x18
+		Ability = ReadShort(BAR(Sys3,0x6,StatOffset+Ability[Staff]),OnPC) --Currently-equipped staff's ability
 		if Ability == 0x0A5 then --Donald Fire
 			WriteShort(Save+0x26F6,0x80A5)
 			WriteByte(BAR(Sys3,0x6,0x168F),0,OnPC)
@@ -680,30 +833,31 @@ end
 if true then
 	local Shield  = ReadShort(Save+0x2718)
 	local Ability = {} --Offset for shield's ability within 03system.bar's item
-	Ability[0x031] = 0x376A --Knight's Shield
-	Ability[0x08B] = 0x377A --Adamant Shield
-	Ability[0x08C] = 0x378A --Chain Gear
-	Ability[0x08E] = 0x37AA --Falling Star
-	Ability[0x08F] = 0x37BA --Dreamcloud
-	Ability[0x090] = 0x37CA --Knight Defender
-	Ability[0x08D] = 0x379A --Ogre Shield
-	Ability[0x091] = 0x37DA --Genji Shield
-	Ability[0x092] = 0x37EA --Akashic Record
-	Ability[0x259] = 0x3B9A --Akashic Record+
-	Ability[0x093] = 0x37FA --Nobody Guard
-	Ability[0x228] = 0x3B0A --Frozen Pride
-	Ability[0x229] = 0x3B1A --Frozen Pride+
-	Ability[0x1E3] = 0x391A --Save the King
-	Ability[0x1F8] = 0x3A6A --Save the King+
-	Ability[0x22A] = 0x3B2A --Joyous Mushroom
-	Ability[0x22B] = 0x3B3A --Joyous Mushroom+
-	Ability[0x22C] = 0x3B4A --Majestic Mushroom
-	Ability[0x22D] = 0x3B5A --Majestic Mushroom+
-	Ability[0x22E] = 0x3B6A --Ultimate Mushroom
-	Ability[0x032] = 0x380A --Detection Shield
-	Ability[0x033] = 0x381A --Test the King
+	Ability[0x031] = 0x53A --Knight's Shield
+	Ability[0x08B] = 0x54A --Adamant Shield
+	Ability[0x08C] = 0x55A --Chain Gear
+	Ability[0x08E] = 0x57A --Falling Star
+	Ability[0x08F] = 0x58A --Dreamcloud
+	Ability[0x090] = 0x59A --Knight Defender
+	Ability[0x08D] = 0x56A --Ogre Shield
+	Ability[0x091] = 0x5AA --Genji Shield
+	Ability[0x092] = 0x5BA --Akashic Record
+	Ability[0x259] = 0x96A --Akashic Record+
+	Ability[0x093] = 0x5CA --Nobody Guard
+	Ability[0x228] = 0x8DA --Frozen Pride
+	Ability[0x229] = 0x8EA --Frozen Pride+
+	Ability[0x1E3] = 0x6EA --Save the King
+	Ability[0x1F8] = 0x83A --Save the King+
+	Ability[0x22A] = 0x8FA --Joyous Mushroom
+	Ability[0x22B] = 0x90A --Joyous Mushroom+
+	Ability[0x22C] = 0x91A --Majestic Mushroom
+	Ability[0x22D] = 0x92A --Majestic Mushroom+
+	Ability[0x22E] = 0x93A --Ultimate Mushroom
+	Ability[0x032] = 0x5DA --Detection Shield
+	Ability[0x033] = 0x5EA --Test the King
 	if Ability[Shield] ~= nil then
-		Ability = ReadShort(BAR(Sys3,0x6,Ability[Shield]),OnPC) --Currently-equipped shield's ability
+		local StatOffset = 0x8 + ReadInt(BAR(Sys3,0x6,4),OnPC) * 0x18
+		Ability = ReadShort(BAR(Sys3,0x6,StatOffset+Ability[Shield]),OnPC) --Currently-equipped shield's ability
 		if Ability == 0x1A7 then --Goofy Tornado
 			WriteShort(Save+0x280A,0x81A7)
 			WriteByte(BAR(Sys3,0x6,0x16EF),0,OnPC)
@@ -724,10 +878,14 @@ end
 --Show all items in shops (ASSEMBLY edit)
 if not OnPC then
 	WriteInt(0x264250,0)
-elseif ReadLong(0x2F9302-0x56454E) == 0x43B70F0D74D68541 then --Global
-	WriteByte(0x2F9306 - 0x56454E,0)
-elseif ReadLong(0x2F9142-0x56454E) == 0x43B70F0D74D68541 then --JP
-	WriteByte(0x2F9146 - 0x56454E,0)
+elseif ReadLong(0x2FAD62) == 0x43B70F0D74D68541 then --Epic Global
+	WriteByte(0x2FAD66,0)
+elseif ReadLong(0x2FABA2) == 0x43B70F0D74D68541 then --Epic JP
+	WriteByte(0x2FABA6,0)
+elseif ReadLong(0x2FB8A2) == 0x43B70F0D74D68541 then --Steam Global
+	WriteByte(0x2FB8A6,0)
+elseif ReadLong(0x2FB622) == 0x43B70F0D74D68541 then --Steam JP
+	WriteByte(0x2FB626,0)
 end
 --Navigational Map Unlocks Valor Form
 if ReadByte(Save+0x36C0)&0x80 == 0x80 then
@@ -811,12 +969,8 @@ if ReadByte(Save+0x1EDE) > 0 then
 	end
 end
 --Final Door Requirements
-if Place == 0x1212 then
-	if ReadByte(Save+0x36B2) > 0 and ReadByte(Save+0x36B3) > 0 and ReadByte(Save+0x36B4) > 0 then --All Proofs Obtained
-		WriteShort(BAR(ARD,0x05,0x060),0x13D,OnPC) --Spawn Door RC
-	else
-		WriteShort(BAR(ARD,0x05,0x060),0x000,OnPC) --Despawn Door RC
-	end
+if ReadShort(Save+0x1B7C) == 0x04 and SeedCleared then
+	WriteShort(Save+0x1B7C, 0x0D) --The Altar of Naught MAP (Door RC Available)
 end
 end
 
@@ -974,7 +1128,7 @@ if ReadByte(Save+0x1D3E) > 0 then
 end
 end
 
-function HT() 
+function HT()
 --Data Vexen -> Halloween Town
 if Place == 0x1A04 then
 	local PostSave = ReadByte(Save+0x1E5E)
@@ -1907,8 +2061,9 @@ if Place == 0x060C and Events(Null,Null,0x01) then --There's Something Strange G
 	WriteByte(Save+0x1E1F,1)
 elseif Place == 0x030C and Events(Null,Null,0x01) then --Welcome to Disney Castle
 	WriteByte(Save+0x1E1F,2)
-elseif Place == 0x040C and Events(Null,Null,0x02) then --The Strange Door
+elseif Place == 0x040C and Events(Null,Null,0x01) then --The Cornerstone of Light
 	WriteByte(Save+0x1E1F,3)
+elseif Place == 0x040C and Events(Null,Null,0x02) then --The Strange Door
 	WriteArray(Save+0x065E,ReadArray(Save+0x0664,6)) --Load Merlin's House Spawn ID
 elseif Place == 0x000D and Events(Null,Null,0x07) then --Back to Their Own World
 elseif Place == 0x050C and Events(Null,Null,0x01) then --The Castle is Secure
@@ -1930,6 +2085,12 @@ if ReadByte(Save+0x1E1E) > 0 then
 	elseif PrevPlace == 0x050C then --Hall of the Cornerstone (Light)
 		WriteByte(Save+0x1E1E,3)
 	end
+end
+--Restore Royal Summons Taken by Moogles
+if ReadByte(Save+0x365D) > ReadByte(Save+0x1CF7) then --Obtained new copies
+	WriteByte(Save+0x1CF7, ReadByte(Save+0x365D)) --Store amount
+elseif ReadByte(Save+0x365D) < ReadByte(Save+0x1CF7) then --Taken in synth shop
+	WriteByte(Save+0x365D, ReadByte(Save+0x1CF7)) --Restore amount
 end
 end
 
@@ -2316,6 +2477,23 @@ elseif ReadShort(Save+0x1CF9) ~= 0 then --Restore Outside STT
 	WriteShort(BAR(Sys3,0x2,0x6DBA),0x51,OnPC) --Trinity (Solo)
 	WriteShort(Save+0x1CF9,0) --Remove stored Keyblade
 end
+--Faster Twilight Thorn Reaction Commands
+if Place == 0x2202 and Events(0x9D,0x9D,0x9D) then
+	if ReadInt(CutLen) == 0x40 then --RC Start
+		BitOr(Save+0x1CF1,0x10)
+	elseif ReadInt(CutLen) == 0x16C and ReadInt(CutNow) == 0x16C then --Break Raid Succeed
+		BitNot(Save+0x1CF1,0x10)
+	elseif ReadInt(CutLen) == 0x260 and ReadInt(CutNow) == 0x260 then --Break Raid Failed
+		BitNot(Save+0x1CF1,0x10)
+	elseif ReadInt(CutLen) == 0x04D then --Break Raid Kill
+		BitNot(Save+0x1CF1,0x10)
+	end
+	if ReadByte(Save+0x1CF1)&0x10 == 0x10 then
+		Faster(true)
+	else
+		Faster(false)
+	end
+end
 --[[Shorter Day 5
 if Place == 0x0B02 and Events(0x01,0x00,0x0C) then
 	WriteByte(Save+0x1D0E,8)
@@ -2366,6 +2544,20 @@ if ReadShort(Save+0x0D90) == 0x00 then
 	BitOr(Save+0x1D17,0x02) --HB_po_008_END
 	BitOr(Save+0x1D17,0x08) --HB_907_END
 end--]]
+--Faster Minigames
+if Place == 0x0609 then --A Blustery Rescue
+	if ReadByte(Cntrl) == 0 then --Minigame Started
+		Faster(true)
+	end
+elseif Place == 0x0409 then --Minigame Ended
+	Faster(false)
+elseif Place == 0x0709 then --Hunny Slider
+	if ReadByte(Cntrl) == 0 then --Minigame Started
+		Faster(true)
+	end
+elseif Place == 0x0309 then --Minigame Ended
+	Faster(false)
+end
 end
 
 function At()
@@ -2375,7 +2567,9 @@ function Data()
 --Music Change - Final Fights
 if ReadShort(Save+0x03D6) == 0x02 then
 	if Place == 0x1B12 then --Part I
-		WriteShort(BAR(ARD,0x06,0x0A4),0x09C,OnPC) --Guardando nel buio
+		WriteShort(BAR(ARD,0x07,0x059A),0x09C,OnPC) --Guardando nel buio
+		WriteShort(BAR(ARD,0x07,0x1C46),0x09C,OnPC)
+		WriteShort(BAR(ARD,0x06,0x0A4),0x09C,OnPC)
 		WriteShort(BAR(ARD,0x06,0x0A6),0x09C,OnPC)
 	elseif Place == 0x1C12 then --Part II
 		WriteShort(BAR(ARD,0x07,0x008),0x09C,OnPC)
@@ -2405,6 +2599,7 @@ end
 [Save+0x066A,Save+0x066F] Borough Spawn IDs
 Save+0x06B2 Genie Crash Fix
 Save+0x1CF1 STT Dodge Roll, Unknown Disk, Twilight Thorn
+Save+0x1CF7 Royal Summons
 Save+0x1CF8 STT Struggle Weapon
 [Save+0x1CF9,Save+0x1CFA] STT Keyblade
 Save+0x1CFD TT Post-Story Save
